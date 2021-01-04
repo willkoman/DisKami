@@ -10,10 +10,14 @@ using Interactivity;
 using Interactivity.Confirmation;
 using Interactivity.Pagination;
 using Interactivity.Selection;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using Qmmands;
 using CommandAttribute = Qmmands.CommandAttribute;
 using RemainderAttribute = Qmmands.RemainderAttribute;
+using NHentaiSharp.Search;
 
 namespace DisKami.Modules
 {
@@ -23,6 +27,7 @@ namespace DisKami.Modules
         public PictureService PictureService { get; set; }
         public InteractivityService Interactivity { get; set; }
         public Qmmands.CommandService Service { get; set; }
+        public NHentaiService NHentaiService { get; set; }
         
 
         public string[] quotes =
@@ -101,17 +106,45 @@ namespace DisKami.Modules
             string quote = quotes[r.Next(quotes.Length - 1)];
             await Context.Channel.SendMessageAsync(quote);
         }
+        [Command("hentai")]
+        [Description("Searches NHentai for doujins with tags separated by a space")]
+        public async Task Hentai([Remainder] string tags)
+        {
+            GalleryElement qq = await NHentaiService.getBook(tags);
+          
+            Console.WriteLine(qq.numPages);
+            var paginator = new LazyPaginatorBuilder()
+                .WithUsers(Context.User)
+                .WithPageFactory(PageFactory)
+                .WithMaxPageIndex(int.Parse(qq.numPages.ToString()))
+                .WithFooter(PaginatorFooter.PageNumber | PaginatorFooter.Users)
+                .WithDefaultEmotes()
+                .Build();
+            Console.WriteLine(qq.cover.imageUrl);
+            //await Context.Channel.SendMessageAsync(stuff.value[0].thumbnailUrl.ToString());
+            await Interactivity.SendPaginatorAsync(paginator, Context.Channel, TimeSpan.FromMinutes(2));
+
+            Task<PageBuilder> PageFactory(int page)
+            {
+                return Task.FromResult(new PageBuilder()
+                    //.WithText((page + 1).ToString())
+                    .WithTitle(qq.prettyTitle+$" Page {page + 1}")
+                    .WithImageUrl(qq.pages[page].imageUrl.ToString())
+                    .WithColor(System.Drawing.Color.FromArgb(page * 400)));
+            }
+        }
+
         [Command("im")]
         [Description("searches for images with a specified query")]
         public async Task ImageSearch([Remainder] string query)
         {
             string qq = await PictureService.GetGoogleResult(query);
             dynamic stuff = JsonConvert.DeserializeObject(qq);
-
+            Console.WriteLine(stuff.totalEstimatedMatches);
             var paginator = new LazyPaginatorBuilder()
                 .WithUsers(Context.User)
                 .WithPageFactory(PageFactory)
-                .WithMaxPageIndex(25)
+                .WithMaxPageIndex(int.Parse(stuff.totalEstimatedMatches.ToString())-1)
                 .WithFooter(PaginatorFooter.PageNumber | PaginatorFooter.Users)
                 .WithDefaultEmotes()
                 .Build();
@@ -210,7 +243,15 @@ namespace DisKami.Modules
         //[Command("list")]
         //public Task ListAsync(params string[] objects)
         //    => ReplyAsync("You listed: " + string.Join("; ", objects));
+        [Command("say")]
+        [Description("Repeats what's said after 'say'")]
+        public async Task Say([Remainder] string query)
+        {
+            var messages = await this.Context.Channel.GetMessagesAsync(1).FlattenAsync();
 
+            await (Context.Channel as ITextChannel).DeleteMessagesAsync(messages);
+            await Context.Channel.SendMessageAsync(query);
+        }
 
 
 
@@ -218,6 +259,7 @@ namespace DisKami.Modules
         [Description("Lists available commands.")]
         public async Task help()
         {
+            await Context.Channel.SendMessageAsync("Check your DM for a list of commands!");
             var a = new EmbedBuilder();
             a.WithTitle("Commands");
             a.WithDescription(string.Join('\n', Service.GetAllCommands().Select(x => $"`{x.Name}` - {x.Description}")));

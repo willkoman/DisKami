@@ -36,7 +36,7 @@ namespace DisKami
             string key = readText[0];
             await Client.LoginAsync(TokenType.Bot, key); 
             await Client.StartAsync(); 
-            await Client.SetGameAsync("$help"); 
+            await Client.SetGameAsync("%help"); 
             Client.Log += x =>
             {
                 Console.WriteLine(x.Message);
@@ -86,7 +86,7 @@ namespace DisKami
 
                 var context = new CommandHandlingService(msg);
 
-                if (!CommandUtilities.HasAnyPrefix(msg.Content, new[] { "$" }, StringComparison.OrdinalIgnoreCase, out string usedPrefix, out string cmd) == true)
+                if (!CommandUtilities.HasAnyPrefix(msg.Content, new[] { "%" }, StringComparison.OrdinalIgnoreCase, out string usedPrefix, out string cmd) == true)
                 {
                     return;
                 }
@@ -115,6 +115,7 @@ namespace DisKami
                 .AddSingleton<HttpClient>()
                 .AddSingleton<MusicService>()
                 .AddSingleton<PictureService>()
+                .AddSingleton<NHentaiService>()
                 .AddSingleton<YoutubeService>()
                 .BuildServiceProvider();
         }
