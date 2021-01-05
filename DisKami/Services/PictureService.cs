@@ -22,7 +22,7 @@ namespace DisKami.Services
         }
         public async Task<string> GetGoogleResult(string query)
         {
-            var client = new RestClient("https://bing-image-search1.p.rapidapi.com/images/search?q=%3C"+query+"%3E");
+            var client = new RestClient("https://bing-image-search1.p.rapidapi.com/images/search?q=%3C"+query+ "%3E&safesearch=off");
             var request = new RestRequest(Method.GET);
             request.AddHeader("x-rapidapi-host", "bing-image-search1.p.rapidapi.com");
             request.AddHeader("x-rapidapi-key", "fb9545b61emsh146803d8e59810fp167c9bjsnfd7cb4df0b07");
