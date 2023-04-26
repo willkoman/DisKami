@@ -1,26 +1,36 @@
-﻿using System;
+﻿using Discord;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web;
+using Discord.Commands;
+using Newtonsoft.Json;
+using NHentaiSharp.Search;
 
 
 namespace DisKami.Services
 {
+
     public class NHentaiService
     {
-       public async Task<NHentaiSharp.Search.GalleryElement> getBook(string t)
-        {
-            string[] tags = t.Split(" ");
+        public static HttpClient HttpClient { get; } = new HttpClient();
 
-            Random r = new Random();
-            // We do a search with the tags
-            var result = await NHentaiSharp.Core.SearchClient.SearchWithTagsAsync(tags);
-            int page = r.Next(0, result.numPages) + 1; // Page count begin at 1
-                                                       // We do a new search at a random page
-            result = await NHentaiSharp.Core.SearchClient.SearchWithTagsAsync(tags, page);
-            var doujinshi = result.elements[r.Next(0, result.elements.Length)]; // We get a random doujinshi
+        //get a douhjin with the specified tag from nhentai and convert it to type GalleryElement
+        public static async Task<GalleryElement> getBook(string tag)
+        {
             
-           return doujinshi;
+            //get the json from the nhentai api
+            string json = await HttpClient.GetStringAsync("https://nhentai.net/api/galleries/search?query=" + tag);
+
+            //convert the json to a GalleryElement
+            GalleryElement book = JsonConvert.DeserializeObject<GalleryElement>(json);
+            return book;
         }
+        
     }
+
 }
